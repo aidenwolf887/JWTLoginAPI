@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using JWTLoginAPI.Data;
+using JWTLoginAPI.Interfaces;
+using JWTLoginAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +20,8 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
