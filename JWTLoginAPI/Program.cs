@@ -5,6 +5,8 @@ using System.Text;
 using JWTLoginAPI.Data;
 using JWTLoginAPI.Interfaces;
 using JWTLoginAPI.Services;
+using FluentValidation;
+using JWTLoginAPI.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,6 +22,8 @@ if (string.IsNullOrEmpty(connectionString))
     throw new Exception("Waduh! Connection String tidak ketemu di User Secrets.");
 }
 // Add services to the container.
+
+
 
 builder.Services.AddAuthentication(options =>
 {
@@ -40,6 +44,8 @@ AddJwtBearer(options =>
         ClockSkew = TimeSpan.Zero
     };
 });
+
+builder.Services.AddValidatorsFromAssemblyContaining<UserRegisterValidator>();
 
 builder.Services.AddAuthorization();
 
