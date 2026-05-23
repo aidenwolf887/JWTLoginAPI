@@ -22,7 +22,7 @@ namespace JWTLoginAPI.Services
             _configuration = configuration;
         }
 
-        public async Task<User> RegisterAsync(UserRegisterDto request)
+        public async Task<UserResponseDto> RegisterAsync(UserRegisterDto request)
         {
             if (await _context.Users.AnyAsync(u => u.Username == request.Username))
                 throw new Exception("Username already exists.");
@@ -35,11 +35,20 @@ namespace JWTLoginAPI.Services
             {
                 Username = request.Username,
                 Email = request.Email,
-                PasswordHash = passwordHash
+                PasswordHash = passwordHash,
+                Role = "User"
             };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return user;
+            
+            return new UserResponseDto
+            {
+                Id = user.Id,
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role,
+                CreatedAt = user.CreatedAt
+            };
         }
 
         public async Task<string?> LoginAsync(UserLoginDto request) 

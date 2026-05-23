@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using JWTLoginAPI.DTOs;
 using JWTLoginAPI.Interfaces;
+using FluentValidation;
 
 
 namespace JWTLoginAPI.Controllers
@@ -19,10 +20,16 @@ namespace JWTLoginAPI.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(UserRegisterDto request)
+        public async Task<IActionResult> Register([FromBody]UserRegisterDto request, [FromServices]IValidator<UserRegisterDto> validator)
         {
-            var user = await _authService.RegisterAsync(request);
-            return Ok(new { message = "User registered successfully", data = user.Username });
+            var validationResult = await validator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(validationResult.Errors.Select(e => new {e.PropertyName, e.ErrorMessage})); 
+            }
+
+            var userRespone = await _authService.RegisterAsync(request);
+            return Ok(new { message = "User registered successfully", data = userRespone });
         }
 
         [HttpPost("login")]

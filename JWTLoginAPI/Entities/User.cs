@@ -4,17 +4,19 @@ namespace JWTLoginAPI.Entities
 {
     public class User
     {
-        [Key]
         public Guid Id { get; set; } = Guid.NewGuid();
 
-        [Required]
         public string Username { get; set; } = string.Empty;
 
-        [Required]
         public string Email { get; set; } = string.Empty;
 
-        [Required]
         public string PasswordHash { get; set; } = string.Empty;
+
+        public string Role { get; set; } = "User";
+        public string RefreshToken { get; set; } = string.Empty;
+
+        public DateTime TokenCreated { get; set; }
+        public DateTime TokenExpires { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
