@@ -6,7 +6,9 @@ namespace JWTLoginAPI.Interfaces
     public interface IAuthService
     {
         Task<UserResponseDto> RegisterAsync(UserRegisterDto request);
-        Task<string?> LoginAsync(UserLoginDto request);
+        Task<AuthResponseDto> LoginAsync(UserLoginDto request, string ipAddress);
+        Task<AuthResponseDto> RefreshTokenAsync(string token, string ipAddress);
+        Task<bool> LogoutAsync(string token);
 
         Task<bool> UpdateUserAsync(Guid id, string newUsername);
     }
