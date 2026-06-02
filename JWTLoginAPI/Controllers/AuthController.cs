@@ -117,5 +117,19 @@ namespace JWTLoginAPI.Controllers
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
         }
+
+        [HttpGet("user-data"), Authorize(Roles = "User,Admin")]
+        public IActionResult GetUserData()
+        {
+            //var username = User.Identity?.Name; // Ambil username dari token
+            return Ok(new { message = "Sukses! Ini adalah data yang bisa dilihat oleh user dan admin" });
+        }
+
+        [HttpGet("admin-data"), Authorize(Roles = "Admin")]
+        public IActionResult GetAdminData()
+        {
+               //var username = User.Identity?.Name; // Ambil username dari token
+               return Ok(new { message = "Sukses! Ini adalah data yang hanya bisa dilihat oleh admin" });
+        }
     }
 }
