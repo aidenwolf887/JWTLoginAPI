@@ -1,12 +1,14 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using FluentValidation;
 using JWTLoginAPI.Data;
+using JWTLoginAPI.Entities;
 using JWTLoginAPI.Interfaces;
 using JWTLoginAPI.Services;
-using FluentValidation;
 using JWTLoginAPI.Validators;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +25,19 @@ if (string.IsNullOrEmpty(connectionString))
 }
 // Add services to the container.
 
+// UBAH: Dari IdentityUser<Guid> menjadi User
+builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
+{
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>()
+.AddDefaultTokenProviders();
 
 
 builder.Services.AddAuthentication(options =>
@@ -86,6 +101,23 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
+
+// --- EKSEKUSI DATABASE SEEDING SECARA OTOMATIS ---
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Jalankan fungsi seeder kita
+        await JWTLoginAPI.Data.DbSeeder.SeedRolesAndAdminAsync(services);
+    }
+    catch (Exception ex)
+    {
+        // Jika gagal seeding, log error-nya agar ketahuan saat debug
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Waduh! Gagal melakukan seeding database.");
+    }
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

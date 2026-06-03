@@ -50,7 +50,7 @@ namespace JWTLoginAPI.Controllers
             }
 
             // Ambil token dari DB untuk dipasang ke Cookie HTTP-Only
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == request.Username);
             if (user != null)
             {
                 SetRefreshTokenCookie(user.RefreshToken, user.TokenExpires);
@@ -79,7 +79,7 @@ namespace JWTLoginAPI.Controllers
 
             // 2. Ambil token baru dari DB untuk update Cookie
             var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken); // Token lama sudah diganti di service, cari berdasarkan user jika perlu, atau ubah arsitektur DTO. Tapi karena service kita langsung mengupdate DB, kita cari user berdasarkan username yang dikembalikan di DTO hasil refresh
-            var updatedUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == result.Username);
+            var updatedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == result.Username);
 
             if (updatedUser != null)
             {
