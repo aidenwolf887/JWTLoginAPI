@@ -2,6 +2,7 @@ using FluentValidation;
 using JWTLoginAPI.Data;
 using JWTLoginAPI.Entities;
 using JWTLoginAPI.Interfaces;
+using JWTLoginAPI.Middleware;
 using JWTLoginAPI.Services;
 using JWTLoginAPI.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,6 +17,14 @@ var jwtKey = builder.Configuration["JwtSettings:Key"];
 var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
 var jwtAudience = builder.Configuration["JwtSettings:Audience"];
 var key = Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]!);
+
+if (string.IsNullOrEmpty(jwtKey))
+{
+    throw new InvalidOperationException(
+        "CRITICAL ERROR: JWT Secret Key tidak ditemukan di konfigurasi server! " +
+        "Pastikan appsettings.Production.json atau Environment Variable sudah terpasang dengan benar."
+    );
+}
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -101,6 +110,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // --- EKSEKUSI DATABASE SEEDING SECARA OTOMATIS ---
 using (var scope = app.Services.CreateScope())
