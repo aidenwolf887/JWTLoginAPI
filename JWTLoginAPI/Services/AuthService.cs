@@ -97,7 +97,9 @@ namespace JWTLoginAPI.Services
             {
                 Token = jwtToken,
                 Username = user.UserName!,
-                Role = primaryRole
+                Role = primaryRole,
+                RefreshToken = user.RefreshToken,
+                RefreshTokenExpires = user.TokenExpires
             };
         }
 
@@ -127,8 +129,10 @@ namespace JWTLoginAPI.Services
             {
                 Token = newJwtToken,
                 Username = user.UserName!,
-                Role = primaryRole
-            };
+                Role = primaryRole,
+                RefreshToken = user.RefreshToken,
+                RefreshTokenExpires = user.TokenExpires
+            };  
         }
 
         public async Task<bool> LogoutAsync(string token)

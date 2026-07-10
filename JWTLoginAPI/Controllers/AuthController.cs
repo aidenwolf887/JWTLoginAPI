@@ -2,8 +2,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using JWTLoginAPI.Data;
+// // PERUBAHAN: Menghapus 'using Microsoft.EntityFrameworkCore;' dan 'using JWTLoginAPI.Data;' 
+// Karena Controller tidak lagi melakukan query database secara langsung menggunakan EF Core.
 using JWTLoginAPI.DTOs;
 using JWTLoginAPI.Interfaces;
 using System;
@@ -17,12 +17,12 @@ namespace JWTLoginAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly ApplicationDbContext _context; // Kita butuh ini untuk mengambil token dari DB di level Controller
 
-        public AuthController(IAuthService _authService, ApplicationDbContext context)
+        // // PERUBAHAN: Menghapus 'ApplicationDbContext context' dari parameter Constructor.
+        // Sekarang Controller benar-benar bersih dan hanya bergantung pada `IAuthService`.
+        public AuthController(IAuthService authService)
         {
-            this._authService = _authService;
-            _context = context;
+            _authService = authService;
         }
 
         [HttpPost("register")]
@@ -49,12 +49,9 @@ namespace JWTLoginAPI.Controllers
                 return BadRequest("Username atau password salah.");
             }
 
-            // Ambil token dari DB untuk dipasang ke Cookie HTTP-Only
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == request.Username);
-            if (user != null)
-            {
-                SetRefreshTokenCookie(user.RefreshToken, user.TokenExpires);
-            }
+            // // PERUBAHAN: Menghapus query manual '_context.Users.FirstOrDefaultAsync(...)' yang ada di kode lama.
+            // Data 'RefreshToken' dan 'Expires' kini langsung diambil dari objek 'result' bawaan Service.
+            SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpires);
 
             return Ok(new { message = "Login Berhasil!", token = result.Token });
         }
@@ -62,7 +59,6 @@ namespace JWTLoginAPI.Controllers
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken()
         {
-            // 1. Ambil Refresh Token dari Cookie browser
             var refreshToken = Request.Cookies["refreshToken"];
             if (string.IsNullOrEmpty(refreshToken))
             {
@@ -77,14 +73,9 @@ namespace JWTLoginAPI.Controllers
                 return Unauthorized("Token tidak valid atau sudah kadaluwarsa.");
             }
 
-            // 2. Ambil token baru dari DB untuk update Cookie
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken); // Token lama sudah diganti di service, cari berdasarkan user jika perlu, atau ubah arsitektur DTO. Tapi karena service kita langsung mengupdate DB, kita cari user berdasarkan username yang dikembalikan di DTO hasil refresh
-            var updatedUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == result.Username);
-
-            if (updatedUser != null)
-            {
-                SetRefreshTokenCookie(updatedUser.RefreshToken, updatedUser.TokenExpires);
-            }
+            // // PERUBAHAN: Menghapus total 2 baris query ke '_context.Users' yang mencari user lama & user terupdate.
+            // Logika pencarian dan pembaharuan token di DB sudah diselesaikan di dalam '_authService.RefreshTokenAsync'.
+            SetRefreshTokenCookie(result.RefreshToken, result.RefreshTokenExpires);
 
             return Ok(new { token = result.Token });
         }
@@ -98,7 +89,6 @@ namespace JWTLoginAPI.Controllers
                 await _authService.LogoutAsync(refreshToken);
             }
 
-            // Hapus Cookie di Browser dengan cara membuatnya langsung expired
             Response.Cookies.Delete("refreshToken");
 
             return Ok(new { message = "Logout berhasil!" });
@@ -109,10 +99,10 @@ namespace JWTLoginAPI.Controllers
         {
             var cookieOptions = new CookieOptions
             {
-                HttpOnly = true, // Mengamankan token dari serangan XSS (JavaScript tidak bisa baca)
+                HttpOnly = true,
                 Expires = expires,
-                SameSite = SameSiteMode.Strict, // Mencegah serangan CSRF
-                Secure = true // Hanya berjalan di HTTPS (saat production)
+                SameSite = SameSiteMode.Strict,
+                Secure = true
             };
 
             Response.Cookies.Append("refreshToken", token, cookieOptions);
@@ -121,15 +111,13 @@ namespace JWTLoginAPI.Controllers
         [HttpGet("user-data"), Authorize(Roles = "User,Admin")]
         public IActionResult GetUserData()
         {
-            //var username = User.Identity?.Name; // Ambil username dari token
             return Ok(new { message = "Sukses! Ini adalah data yang bisa dilihat oleh user dan admin" });
         }
 
         [HttpGet("admin-data"), Authorize(Roles = "Admin")]
         public IActionResult GetAdminData()
         {
-               //var username = User.Identity?.Name; // Ambil username dari token
-               return Ok(new { message = "Sukses! Ini adalah data yang hanya bisa dilihat oleh admin" });
+            return Ok(new { message = "Sukses! Ini adalah data yang hanya bisa dilihat oleh admin" });
         }
     }
 }
