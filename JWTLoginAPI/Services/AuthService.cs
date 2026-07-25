@@ -80,7 +80,7 @@ namespace JWTLoginAPI.Services
 
             // Ambil role user dari tabel relasi Identity
             var roles = await _userManager.GetRolesAsync(user);
-            var primaryRole = roles.FirstOrDefault() ?? "User";
+            var primaryRole = roles.Contains("Manager") ? "Manager" : (roles.FirstOrDefault() ?? "User");
 
             // Buat token akses dan refresh token
             var jwtToken = await CreateJwtToken(user);

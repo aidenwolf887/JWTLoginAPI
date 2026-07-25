@@ -109,6 +109,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+// Tambahkan CORS policy
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // Sesuaikan jika pakai Live Server
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // SANGAT PENTING! Agar RefreshToken Cookie bisa terkirim
+    });
+});
+
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
@@ -138,6 +150,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// PIPELINE CORS WAJIB SEBELUM AUTHENTICATION
+app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
