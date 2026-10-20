@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 // // PERUBAHAN: Menghapus 'using Microsoft.EntityFrameworkCore;' dan 'using JWTLoginAPI.Data;' 
 // Karena Controller tidak lagi melakukan query database secara langsung menggunakan EF Core.
 using JWTLoginAPI.DTOs;
@@ -39,6 +40,7 @@ namespace JWTLoginAPI.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("AuthRatePolicy")]
         public async Task<IActionResult> Login(UserLoginDto request)
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
@@ -46,7 +48,7 @@ namespace JWTLoginAPI.Controllers
 
             if (result == null)
             {
-                return BadRequest("Username atau password salah.");
+                return BadRequest(new { message = "Username atau password salah." });
             }
 
             // // PERUBAHAN: Menghapus query manual '_context.Users.FirstOrDefaultAsync(...)' yang ada di kode lama.

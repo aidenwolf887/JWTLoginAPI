@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +35,22 @@ if (string.IsNullOrEmpty(connectionString))
     throw new Exception("Waduh! Connection String tidak ketemu di User Secrets.");
 }
 // Add services to the container.
+
+// Tambahkan Rate Limiter Service
+builder.Services.AddRateLimiter(options =>
+{
+    // Jika batas terlampaui, kembalikan HTTP Status 429 (Too Many Requests)
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Policy khusus untuk Auth (Brute-Force Protection)
+    options.AddFixedWindowLimiter("AuthRatePolicy", opt =>
+    {
+        opt.PermitLimit = 5;                        // Maksimal 5x percobaan
+        opt.Window = TimeSpan.FromMinutes(1);       // Per kurun waktu 1 menit
+        opt.QueueLimit = 0;                         // Tidak ada antrean, langsung reject jika > 5
+    });
+});
+
 
 // UBAH: Dari IdentityUser<Guid> menjadi User
 builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
@@ -114,7 +132,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://127.0.0.1:5500", "http://localhost:5500") // Sesuaikan jika pakai Live Server
+        policy.SetIsOriginAllowed(origin =>true ) // Sesuaikan jika pakai Live Server
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // SANGAT PENTING! Agar RefreshToken Cookie bisa terkirim
@@ -153,6 +171,8 @@ app.UseHttpsRedirection();
 
 // PIPELINE CORS WAJIB SEBELUM AUTHENTICATION
 app.UseCors("AllowFrontend");
+
+app.UseRateLimiter(); // Gunakan Rate Limiter Middleware
 
 app.UseAuthentication();
 app.UseAuthorization();
