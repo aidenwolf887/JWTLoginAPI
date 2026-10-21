@@ -169,8 +169,23 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseDefaultFiles();
-app.UseStaticFiles();
+var wwwrootPath = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+
+if (Directory.Exists(wwwrootPath))
+{
+    var fileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(wwwrootPath);
+
+    app.UseDefaultFiles(new DefaultFileOptions
+    {
+        FileProvider = fileProvider
+    });
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = fileProvider,
+        RequestPath = "" // Kosongkan agar bisa diakses langsung via /login.html
+    });
+}
 // PIPELINE CORS WAJIB SEBELUM AUTHENTICATION
 app.UseCors("AllowFrontend");
 
@@ -178,6 +193,8 @@ app.UseRateLimiter(); // Gunakan Rate Limiter Middleware
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+
 
 app.MapControllers();
 
