@@ -169,6 +169,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
 // PIPELINE CORS WAJIB SEBELUM AUTHENTICATION
 app.UseCors("AllowFrontend");
 

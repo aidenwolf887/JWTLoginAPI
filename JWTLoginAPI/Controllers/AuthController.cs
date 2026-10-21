@@ -103,7 +103,7 @@ namespace JWTLoginAPI.Controllers
             {
                 HttpOnly = true,
                 Expires = expires,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Secure = true
             };
 
